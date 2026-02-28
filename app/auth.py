@@ -1,9 +1,9 @@
-from fastapi import HTTPException, Depends, status
+from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from uuid import UUID
+
 
 SECRET_KEY = "supersecretkey"
 ALGORITHM = "HS256"
@@ -14,6 +14,11 @@ security = HTTPBearer()
 
 
 def hash_password(password: str):
+    if len(password.encode("utf-8")) >72:
+        raise HTTPException(
+            status_code=400,
+            detail="Password too long.Maximum 72 bytes allowed."
+        )
     return pwd_context.hash(password)
 
 
