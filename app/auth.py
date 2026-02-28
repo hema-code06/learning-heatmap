@@ -44,8 +44,8 @@ def get_current_user(
 
     if payload is None or "sub" not in payload:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
+            status_code=401,
             detail="Invalid or expired token"
         )
 
-    return UUID(payload["sub"])
+    return payload["sub"]
