@@ -1,5 +1,6 @@
 import Heatmap from "../components/Heatmap";
 import EntryForm from "../components/EntryForm";
+import VelocityChart from "../components/VelocityChart";
 import { useEffect, useState } from "react";
 import API from "../api";
 
@@ -8,6 +9,7 @@ export default function Dashboard() {
   const [velocity, setVelocity] = useState(0);
   const [consistency, setConsistency] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [trendData, setTrendData] = useState(0);
 
   const refresh = () => {
     setRefreshKey((prev) => prev + 1);
@@ -16,28 +18,31 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [streakRes, velocityRes, consistencyRes] = await Promise.all([
-          API.get("/learning/analytics/streak"),
-          API.get("/learning/analytics/velocity"),
-          API.get("/learning/analytics/consistency"),
-        ]);
+        const [streakRes, velocityRes, consistencyRes, trendRes] =
+          await Promise.all([
+            API.get("/learning/analytics/streak"),
+            API.get("/learning/analytics/velocity"),
+            API.get("/learning/analytics/consistency"),
+            API.get("/learning/analytics/velocity-trend"),
+          ]);
 
         setStreak(streakRes.data.weekly_streak);
         setVelocity(velocityRes.data.weekly_average_hours_last_4_weeks);
-        setConsistency(consistencyRes.data.consistency_score_precent);
-      } catch (error) {
-        console.error("Error fetching analytics:", error);
+        setConsistency(consistencyRes.data.consistency_score_percent);
+        setTrendData(trendRes.data);
+      } catch (err) {
+        console.error("Analytics error:", err);
       }
     };
+
     fetchAnalytics();
   }, [refreshKey]);
 
   return (
     <div>
       <h1>Dashboard</h1>
-      <h2>Analytics</h2>
-
-      <div>
+      <section>
+        <h2>Analytics</h2>
         <p>
           <strong>Weekly streak: </strong>
           {streak} weeks
@@ -50,7 +55,9 @@ export default function Dashboard() {
           <strong>Consistency (30 days): </strong>
           {consistency} %
         </p>
-      </div>
+      </section>
+
+      <VelocityChart data={trendData} />
 
       <EntryForm refresh={refresh} />
       <Heatmap key={refreshKey} />
