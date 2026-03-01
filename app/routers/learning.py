@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from datetime import timedelta
+from sqlalchemy import func, extract
+from datetime import timedelta, date
 from uuid import UUID
 
 from .. import models, schemas
@@ -38,7 +38,7 @@ def get_entries(
     results = db.query(models.LearningEntry).filter(
         models.LearningEntry.user_id == user_id
     ).order_by(models.LearningEntry.date.desc()).all()
-    
+
     return results
 
 
@@ -118,3 +118,35 @@ def get_heatmap(
         current += timedelta(days=1)
 
     return filled
+
+
+@router.get("/analytics/streak")
+def get_weekly_streak(
+    db: Session = Depends(get_db),
+    user_id: str = Depends(get_current_user)
+):
+    results = db.query(
+        extract("year", models.LearningEntry.date).label("year"),
+        extract("week", models.LearningEntry.date).label("week")
+    ).filter(
+        models.LearningEntry.user_id == user_id
+    ).group_by("year", "week").order_by("year", "week").all()
+
+    if not results:
+        return {"weekly_streak": 0}
+    weeks = [(int(r.year), int(r.week)) for r in results]
+
+    streak = 1
+    max_streak = 1
+
+    for i in range(1, len(weeks)):
+        prev = weeks[i-1]
+        curr = weeks[i]
+
+        if (curr[0] == prev[0] and curr[1] == prev[1] + 1):
+            streak += 1
+        else:
+            streak = 1
+
+        max_streak = max(max_streak, streak)
+    return {"weekly_streak": max_streak}
