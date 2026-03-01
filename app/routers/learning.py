@@ -32,12 +32,14 @@ def create_entry(
 @router.get("/", response_model=list[schemas.LearningEntryResponse])
 def get_entries(
     db: Session = Depends(get_db),
-    user_id: UUID = Depends(get_current_user)
+    user_id: str = Depends(get_current_user)
 ):
 
     results = db.query(models.LearningEntry).filter(
         models.LearningEntry.user_id == user_id
     ).order_by(models.LearningEntry.date.desc()).all()
+    
+    return results
 
 
 @router.put("/{entry_id}", response_model=schemas.LearningEntryResponse)
@@ -102,7 +104,7 @@ def get_heatmap(
         return []
 
     data_dict = {r.date: r.total_hours for r in results}
-    start = min(data_dict.kes())
+    start = min(data_dict.keys())
     end = max(data_dict.keys())
 
     filled = []

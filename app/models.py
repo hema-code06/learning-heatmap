@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Date, Float, Text, ForeignKey, DateTime
+from sqlalchemy import Column, String, Date, Float, Text, ForeignKey, DateTime, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -20,6 +20,10 @@ class User(Base):
 
 class LearningEntry(Base):
     __tablename__ = "learning_entries"
+    
+    __table_args__ = (
+        Index("idx_user_date", "user_id", "date"),
+    )
 
     id = Column(String, primary_key=True, default=lambda:str(uuid.uuid4()))
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"))
