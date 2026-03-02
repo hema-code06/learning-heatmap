@@ -1,119 +1,184 @@
-import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader2, ChevronUp, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import toast from "react-hot-toast";
 import API from "../api";
+import EntryList from "./EntryList";
 
 export default function EntryForm({ refresh }) {
   const [date, setDate] = useState("");
   const [hours, setHours] = useState("");
   const [topic, setTopic] = useState("");
-  const [error, setError] = useState("");
+  const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    fetchEntries();
+  }, []);
+
+  const fetchEntries = async () => {
+    try {
+      const res = await API.get("/learning/");
+      setEntries(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      toast.error("Failed to load entries");
+      setEntries([]);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
-    setError("");
 
-    if (!date) {
-      alert("Please select a date.");
+    if (!date || !hours || !topic.trim()) {
+      toast.error("All fields are required.");
       return;
     }
 
-    if (!hours || isNaN(Number(hours))) {
-      alert("Please enter valid study hours.");
+    if (isNaN(Number(hours))) {
+      toast.error("Hours must be a valid number.");
       return;
     }
 
-    if (!topic.trim()) {
-      alert("Please enter a topic.");
-      return;
-    }
+    const optimisticEntry = {
+      id: Date.now(), // temporary ID
+      date,
+      hours,
+      topic,
+    };
+
+    setEntries((prev) => [optimisticEntry, ...prev]);
 
     try {
       setLoading(true);
 
-      await API.post("/learning/", {
-        date: date,
+      const res = await API.post("/learning/", {
+        date,
         hours: Number(hours),
         topic: topic.trim(),
       });
-      alert("Entry added successfully..");
+      setEntries((prev) =>
+        prev.map((e) => (e.id === optimisticEntry.id ? res.data : e)),
+      );
+
+      toast.success("Entry added successfully..");
 
       setDate("");
       setHours("");
       setTopic("");
 
+      setCollapsed(true);
+
       if (refresh) refresh();
     } catch (err) {
-      console.error("Add entry error:", err.response?.data);
-
-      const backendMessage =
+      toast.error(
         err.response?.data?.detail ||
-        "Something went wrong while adding entry.";
+          "Something went wrong while adding entry.",
+      );
 
-      alert(`❌ ${backendMessage}`);
+      // rollback
+      fetchEntries();
     } finally {
       setLoading(false);
     }
   };
 
+  const deleteEntry = async (id) => {
+    const oldEntries = entries;
+    setEntries((prev) => prev.filter((e) => e.id !== id));
+
+    try {
+      await API.delete(`/learning/${id}`);
+      toast.success("Entry deleted");
+      if (refresh) refresh();
+    } catch {
+      toast.error("Delete failed");
+      setEntries(oldEntries);
+    }
+  };
+
+  const uniqueTopics = [
+    ...new Set(entries.map((e) => e.topic).filter(Boolean)),
+  ];
+
   return (
-    <form onSubmit={submit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Date */}
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-500 mb-2">Date</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none"
-          />
-        </div>
+    <div className="space-y-8">
+      {/* Collapsible Header */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="flex items-center gap-2 text-indigo-600 font-medium"
+      >
+        {collapsed ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
+        {collapsed ? "Add New Entry" : "Hide Form"}
+      </button>
 
-        {/* Hours */}
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-500 mb-2">Study Hours</label>
-          <input
-            type="number"
-            step="0.1"
-            placeholder="e.g. 2.5"
-            value={hours}
-            onChange={(e) => setHours(e.target.value)}
-            className="px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none"
-          />
-        </div>
+      <AnimatePresence>
+        {!collapsed && (
+          <motion.form
+            onSubmit={submit}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+          >
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              required
+              className="px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none"
+            />
 
-        {/* Topic */}
-        <div className="flex flex-col">
-          <label className="text-sm text-slate-500 mb-2">Topic</label>
-          <input
-            type="text"
-            placeholder="e.g. React Hooks"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            className="px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none"
-          />
-        </div>
-      </div>
+            <input
+              type="number"
+              step="0.1"
+              placeholder="Hours"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              required
+              className="px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none"
+            />
 
-      {/* Error Message */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
-          {error}
-        </div>
-      )}
+            <input
+              list="topics"
+              type="text"
+              placeholder="Topic"
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              required
+              className="px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 outline-none"
+            />
 
-      {/* Submit Button */}
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-medium disabled:opacity-50"
-        >
-          {loading && <Loader2 className="animate-spin" size={18} />}
-          {loading ? "Adding Entry..." : "Add Entry"}
-        </button>
-      </div>
-    </form>
+            <datalist id="topics">
+              {uniqueTopics.map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="md:col-span-3 flex justify-center items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-medium disabled:opacity-50"
+            >
+              {loading && <Loader2 className="animate-spin" size={18} />}
+              {loading ? "Adding..." : "Add Entry"}
+            </button>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
+      {/* Entry List */}
+      <EntryList
+        entries={entries}
+        onDelete={deleteEntry}
+        onEdit={(entry) => {
+          setDate(entry.date);
+          setHours(entry.hours);
+          setTopic(entry.topic);
+          setCollapsed(false);
+        }}
+      />
+    </div>
   );
 }
