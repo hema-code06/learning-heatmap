@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 
 
-app = FastAPI()
+app = FastAPI(title="Learning Analytics API")
 load_dotenv()
 
 Base.metadata.create_all(bind=engine)

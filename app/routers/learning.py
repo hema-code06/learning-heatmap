@@ -307,3 +307,47 @@ def get_advanced_analytics(current_user: str = Depends(get_current_user), db: Se
         "insights": insights,
         "badges": badges
     }
+
+
+@router.get("/analytics/daily-streak")
+def get_daily_streak(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    dates = db.query(models.LearningEntry.date).filter(
+        models.LearningEntry.user_id == current_user.id
+    ).distinct().order_by(models.LearningEntry.date.asc()).all()
+
+    if not dates:
+        return {
+            "current_streak": 0,
+            "longest_streak": 0
+        }
+
+    date_list = [d[0] for d in dates]
+
+    longest = 1
+    current = 1
+
+    for i in range(1, len(date_list)):
+        if (date_list[i] - date_list[i-1]).days == 1:
+            current += 1
+        else:
+            current = 1
+        longest = max(longest, current)
+
+    # Calculate current streak from today backwards
+    today = datetime.utcnow().date()
+    current_streak = 0
+    check_day = today
+
+    date_set = set(date_list)
+
+    while check_day in date_set:
+        current_streak += 1
+        check_day -= timedelta(days=1)
+
+    return {
+        "current_streak": current_streak,
+        "longest_streak": longest
+    }
