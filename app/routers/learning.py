@@ -364,7 +364,32 @@ def get_advanced_analytics(
 
     pattern = analyze_weekly_pattern(entries)
     insights = generate_insights(score, consistency_score, velocity_score)
-    badges = evaluate_badges(max_streak, month_hours, goal_completion_rate)
+    calculated_badges = evaluate_badges(
+        max_streak, month_hours, goal_completion_rate)
+
+    # Persist new badges
+    existing_badges = db.query(models.Badge).filter(
+        models.Badge.user_id == current_user.id
+    ).all()
+
+    existing_names = {b.badge_name for b in existing_badges}
+    new_badges = []
+
+    for badge_name in calculated_badges:
+        if badge_name not in existing_names:
+            new_badge = models.Badge(
+                user_id=current_user.id,
+                badge_name=badge_name
+            )
+            db.add(new_badge)
+            new_badges.append(badge_name)
+    db.commit()
+
+    final_badges = db.query(models.Badge).filter(
+        models.badge.user_id == current_user.id
+    ).all()
+
+    badges = [b.badge_name for b in final_badges]
 
     return {
         "productivity_score": score,
