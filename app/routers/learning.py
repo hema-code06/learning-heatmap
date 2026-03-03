@@ -276,7 +276,7 @@ def get_goal_progress(
 @router.get("/analytics")
 def get_advanced_analytics(current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
     entries = db.query(models.LearningEntry).filter(
-        models.LearningEntry.user_id == current_user  # <-- use current_user directly
+        models.LearningEntry.user_id == current_user.id
     ).all()
 
     # assuming hours stored
