@@ -46,8 +46,8 @@ def productivity_label(score):
 def analyze_weekly_pattern(entries):
     day_map = defaultdict(int)
     for entry in entries:
-        day = entry.created_at.strftime("%A")
-        day_map[day] += entry.duration
+        day = entry.date.strftime("%A")
+        day_map[day] += entry.hours * 60
 
     if not day_map:
         return {}
