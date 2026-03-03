@@ -22,6 +22,10 @@ export default function Dashboard() {
   const [trendData, setTrendData] = useState([]);
   const [topicData, setTopicData] = useState([]);
   const [advanced, setAdvanced] = useState(null);
+  const [dailyStreak, setDailyStreak] = useState({
+    current_streak: 0,
+    longest_streak: 0,
+  });
 
   const refresh = () => setRefreshKey((prev) => prev + 1);
 
@@ -35,6 +39,7 @@ export default function Dashboard() {
           trendRes,
           topicRes,
           advancedRes,
+          dailyRes,
         ] = await Promise.all([
           API.get("/learning/analytics/streak"),
           API.get("/learning/analytics/velocity"),
@@ -42,6 +47,7 @@ export default function Dashboard() {
           API.get("/learning/analytics/velocity-trend"),
           API.get("/learning/analytics/topic-breakdown"),
           API.get("/learning/analytics"),
+          API.get("/learning/analytics/daily-streak"),
         ]);
 
         setStreak(streakRes.data.weekly_streak);
@@ -50,6 +56,7 @@ export default function Dashboard() {
         setTrendData(trendRes.data);
         setTopicData(topicRes.data);
         setAdvanced(advancedRes.data);
+        setDailyStreak(dailyRes.data);
       } catch (err) {
         console.error("Analytics error:", err);
       }
@@ -62,11 +69,20 @@ export default function Dashboard() {
     <DashboardLayout>
       {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-        <MetricCard title="Weekly Streak" value={streak} suffix="weeks" />
+        <MetricCard
+          title="Current Streak"
+          value={dailyStreak.current_streak}
+          suffix="days"
+        />
         <MetricCard
           title="Learning Velocity"
           value={velocity}
           suffix="hrs/week"
+        />
+        <MetricCard
+          title="Longest Streak"
+          value={dailyStreak.longest_streak}
+          suffix=" days"
         />
         <MetricCard title="Consistency Score" value={consistency} suffix="%" />
       </div>
@@ -111,7 +127,7 @@ export default function Dashboard() {
   );
 }
 
-function MetricCard({ title, value, suffix}) {
+function MetricCard({ title, value, suffix }) {
   return (
     <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-200 hover:shadow-lg transition">
       <p className="text-sm text-slate-500">{title}</p>
