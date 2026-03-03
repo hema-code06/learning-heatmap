@@ -442,3 +442,21 @@ def get_daily_streak(
         "current_streak": current_streak,
         "longest_streak": longest
     }
+
+
+@router.get("/badges")
+def get_user_badges(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    badges = db.query(models.Badge).filter(
+        models.Badge.user_id == current_user.id
+    ).order_by(models.Badge.unlocked_at.desc()).all()
+
+    return [
+        {
+            "name": b.badge_name,
+            "unlocked_at": b.unlocked_at
+        }
+        for b in badges
+    ]
