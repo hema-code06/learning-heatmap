@@ -274,31 +274,97 @@ def get_goal_progress(
 
 
 @router.get("/analytics")
-def get_advanced_analytics(current_user: str = Depends(get_current_user), db: Session = Depends(get_db)):
+def get_advanced_analytics(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
     entries = db.query(models.LearningEntry).filter(
         models.LearningEntry.user_id == current_user.id
-    ).all()
+    ).order_by(models.LearningEntry.date.asc()).all()
 
-    # assuming hours stored
-    weekly_minutes = sum(e.hours * 60 for e in entries[-7:])
-    target_weekly_minutes = 300
-    consistency_score = 70
-    velocity_score = 75
-    goal_completion_rate = 80
-    streak = 10
+    if not entries:
+        return {
+            "productivity_score": 0,
+            "label": "No Data",
+            "pattern": {},
+            "insights": [],
+            "badges": []
+        }
 
+    # ---- Weekly Minutes (Last 7 Days) ----
+    today = datetime.utcnow().date()
+    seven_days_ago = today - timedelta(days=7)
+
+    weekly_entries = [
+        e for e in entries if e.date >= seven_days_ago
+    ]
+
+    weekly_minutes = sum(e.hours * 60 for e in weekly_entries)
+    target_weekly_minutes = 300  # 5 hours/week baseline
+
+    # ---- Velocity (Last 4 Weeks Avg) ----
+    four_weeks_ago = today - timedelta(weeks=4)
+
+    last_4_weeks_entries = [
+        e for e in entries if e.date >= four_weeks_ago
+    ]
+
+    total_hours_4w = sum(e.hours for e in last_4_weeks_entries)
+    velocity_score = min((total_hours_4w / 20) * 100, 100)  # 20h target
+
+    # ---- Consistency (Last 30 Days Active Days) ----
+    thirty_days_ago = today - timedelta(days=30)
+
+    active_days = len({
+        e.date for e in entries if e.date >= thirty_days_ago
+    })
+
+    consistency_score = (active_days / 30) * 100
+
+    # ---- Goal Completion ----
+    current_month = today.strftime("%Y-%m")
+
+    goal = db.query(models.MonthlyGoal).filter(
+        models.MonthlyGoal.user_id == current_user.id,
+        models.MonthlyGoal.month == current_month
+    ).first()
+
+    month_start = today.replace(day=1)
+
+    month_hours = sum(
+        e.hours for e in entries if e.date >= month_start
+    )
+
+    if goal and goal.target_hours:
+        goal_completion_rate = (month_hours / goal.target_hours) * 100
+    else:
+        goal_completion_rate = 0
+
+    # ---- Daily Streak ----
+    date_set = sorted({e.date for e in entries})
+    streak = 1
+    max_streak = 1
+
+    for i in range(1, len(date_set)):
+        if (date_set[i] - date_set[i-1]).days == 1:
+            streak += 1
+        else:
+            streak = 1
+        max_streak = max(max_streak, streak)
+
+    # ---- Productivity Score ----
     score = calculate_productivity_score(
-        weekly_minutes,
-        target_weekly_minutes,
-        consistency_score,
-        velocity_score,
-        goal_completion_rate,
-        streak
+        weekly_minutes=weekly_minutes,
+        target_weekly_minutes=target_weekly_minutes,
+        consistency_score=consistency_score,
+        velocity_score=velocity_score,
+        goal_completion_rate=goal_completion_rate,
+        streak=max_streak
     )
 
     pattern = analyze_weekly_pattern(entries)
     insights = generate_insights(score, consistency_score, velocity_score)
-    badges = evaluate_badges(streak, 120, goal_completion_rate)
+    badges = evaluate_badges(max_streak, month_hours, goal_completion_rate)
 
     return {
         "productivity_score": score,
