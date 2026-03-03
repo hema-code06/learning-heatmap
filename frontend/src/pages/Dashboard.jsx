@@ -62,9 +62,13 @@ export default function Dashboard() {
     <DashboardLayout>
       {/* Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-        <MetricCard title="Weekly Streak" value={`${streak} weeks`} />
-        <MetricCard title="Learning Velocity" value={`${velocity} hrs/week`} />
-        <MetricCard title="Consistency Score" value={`${consistency}%`} />
+        <MetricCard title="Weekly Streak" value={streak} suffix="weeks" />
+        <MetricCard
+          title="Learning Velocity"
+          value={velocity}
+          suffix="hrs/week"
+        />
+        <MetricCard title="Consistency Score" value={consistency} suffix="%" />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
@@ -107,13 +111,12 @@ export default function Dashboard() {
   );
 }
 
-function MetricCard({ title, value, suffix = "" }) {
-  const numericValue = typeof value === "number" ? value : 0;
+function MetricCard({ title, value, suffix}) {
   return (
     <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-200 hover:shadow-lg transition">
       <p className="text-sm text-slate-500">{title}</p>
       <h2 className="text-4xl font-bold text-indigo-600 mt-3">
-        <CountUp end={numericValue} duration={1.5} /> {suffix}
+        <CountUp end={value} duration={1.5} /> {suffix}
       </h2>
     </div>
   );
