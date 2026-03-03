@@ -259,7 +259,7 @@ def get_goal_progress(
     total_hours = db.query(
         func.sum(models.LearningEntry.hours)
     ).filter(
-        models.LearningEntry.user_id == user_id,
+        models.LearningEntry.user_id == current_user.id,
         models.LearningEntry.date >= month_start
     ).scalar() or 0
 
