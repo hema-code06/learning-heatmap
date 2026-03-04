@@ -109,10 +109,6 @@ export default function Dashboard() {
         <Card title="Monthly Goal">
           <GoalTracker refreshKey={refreshKey} />
         </Card>
-
-        <Card title="Add Learning Entry">
-          <EntryForm refresh={refresh} />
-        </Card>
       </div>
       {advanced && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
