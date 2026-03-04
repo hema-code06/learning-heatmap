@@ -25,9 +25,15 @@ def create_entry(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
+    data = entry.model_dump
+    purpose = data.pop("purpose")
+    project = data.pop("project")
+
     new_entry = models.LearningEntry(
         user_id=current_user.id,
-        **entry.model_dump()
+        **data,
+        **purpose,
+        **project
     )
 
     db.add(new_entry)
@@ -68,8 +74,19 @@ def update_entry(
         raise HTTPException(status_code=404, detail="Entry not found!")
     update_data = updated_data.model_dump(exclude_unset=True)
 
+    if "purpose" in update_data:
+        for k, v in update_data["purpose"].items():
+            setattr(entry, k, v)
+        update_data.pop("purpose")
+
+    if "project" in update_data:
+        for k, v in update_data["project"].items():
+            setattr(entry, k, v)
+        update_data.pop("project")
+
     for key, value in update_data.items():
         setattr(entry, key, value)
+
     db.commit()
     db.refresh(entry)
     return entry
