@@ -40,6 +40,22 @@ class LearningEntry(Base):
     hours = Column(Float, nullable=False)
     topic = Column(String, nullable=False)
     notes = Column(Text)
+    
+    # Purpose of Session (Required)
+    clarity_goal = Column(Text, nullable=False)
+    practical_goal = Column(Text, nullable=False)
+    problem_target = Column(Text, nullable=False)
+    skill_focus = Column(Text, nullable=False)
+    success_criteria = Column(Text, nullable=False)
+    
+    # Project Section (Required)
+    project_name = Column(Text, nullable=False)
+    project_purpose = Column(Text, nullable=False)
+    implementation_summary = Column(Text, nullable=False)
+    challenge = Column(Text, nullable=False)
+    solution = Column(Text, nullable=False)
+    self_review = Column(Text, nullable=False)
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User", back_populates="learning_entries")
