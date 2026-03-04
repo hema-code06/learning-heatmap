@@ -39,7 +39,6 @@ class LearningEntry(Base):
     date = Column(Date, nullable=False)
     hours = Column(Float, nullable=False)
     topic = Column(String, nullable=False)
-    notes = Column(Text)
     
     # Purpose of Session (Required)
     clarity_goal = Column(Text, nullable=False)
