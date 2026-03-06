@@ -9,13 +9,18 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    const res = await API.post("/auth/login", {
-      email,
-      password,
-    });
 
-    localStorage.setItem("token", res.data.access_token);
-    navigate("/dashboard");
+    try {
+      const res = await API.post("/auth/login", {
+        email: email.trim(),
+        password,
+      });
+
+      localStorage.setItem("token", res.data.access_token);
+      navigate("/dashboard");
+    } catch (err) {
+      alert(err.response?.data?.detail || "Login failed");
+    }
   };
 
   return (

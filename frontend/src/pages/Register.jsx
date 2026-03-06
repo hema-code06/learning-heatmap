@@ -13,15 +13,15 @@ export default function Register() {
 
     try {
       await API.post("/auth/register", {
-        name,
-        email,
+        name: name.trim(),
+        email: email.trim(),
         password,
       });
 
-      alert("Registration successful. Login Here..");
+      alert("Registration successful. Please login.");
       navigate("/");
     } catch (err) {
-      alert(err.response?.data?.detail || "Registration failed!!");
+      alert(err.response?.data?.detail || "Registration failed");
     }
   };
 
@@ -33,7 +33,6 @@ export default function Register() {
         </h2>
 
         <form onSubmit={handleRegister} className="space-y-5">
-
           <input
             type="text"
             placeholder="Name"
