@@ -102,14 +102,18 @@ def topic_breakdown(entries):
 
     total = sum(topic_map.values())
 
-    return [
+    return sorted(
+    [
         {
             "topic": k,
             "hours": v,
             "percentage": round((v / total) * 100, 2) if total else 0
         }
         for k, v in topic_map.items()
-    ]
+    ],
+    key=lambda x: x["hours"],
+    reverse=True
+)
 
 
 # ------------------------------
