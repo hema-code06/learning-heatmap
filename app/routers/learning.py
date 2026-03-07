@@ -30,12 +30,15 @@ def create_topic(topic: schemas.TopicCreate, db: Session = Depends(get_db)):
 
     return new_topic
 
+
 @router.get("/topics", response_model=list[schemas.TopicResponse])
 def get_topics(db: Session = Depends(get_db)):
 
-    topics = db.query(models.Topic).order_by(models.Topic.created_at.desc()).all()
+    topics = db.query(models.Topic).order_by(
+        models.Topic.created_at.desc()).all()
 
     return topics
+
 
 @router.delete("/topics/{topic_id}")
 def delete_topic(topic_id: UUID, db: Session = Depends(get_db)):
@@ -49,6 +52,69 @@ def delete_topic(topic_id: UUID, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Topic deleted"}
+
+
+@router.post("/subtopics", response_model=schemas.SubTopicResponse)
+def create_subtopic(subtopic: schemas.SubTopicCreate, db: Session = Depends(get_db)):
+
+    topic = db.query(models.Topic).filter(
+        models.Topic.id == subtopic.topic_id
+    ).first()
+
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+
+    new_subtopic = models.SubTopic(**subtopic.model_dump())
+
+    db.add(new_subtopic)
+    db.commit()
+    db.refresh(new_subtopic)
+
+    return new_subtopic
+
+
+@router.get("/subtopics/{topic_id}", response_model=list[schemas.SubTopicResponse])
+def get_subtopics(topic_id: UUID, db: Session = Depends(get_db)):
+
+    subtopics = db.query(models.SubTopic).filter(
+        models.SubTopic.topic_id == topic_id
+    ).order_by(models.SubTopic.created_at.asc()).all()
+
+    return subtopics
+
+
+@router.put("/subtopics/{subtopic_id}/toggle", response_model=schemas.SubTopicResponse)
+def toggle_subtopic(subtopic_id: UUID, db: Session = Depends(get_db)):
+
+    subtopic = db.query(models.SubTopic).filter(
+        models.SubTopic.id == subtopic_id
+    ).first()
+
+    if not subtopic:
+        raise HTTPException(status_code=404, detail="Subtopic not found")
+
+    subtopic.completed = not subtopic.completed
+
+    db.commit()
+    db.refresh(subtopic)
+
+    return subtopic
+
+
+@router.delete("/subtopics/{subtopic_id}")
+def delete_subtopic(subtopic_id: UUID, db: Session = Depends(get_db)):
+
+    subtopic = db.query(models.SubTopic).filter(
+        models.SubTopic.id == subtopic_id
+    ).first()
+
+    if not subtopic:
+        raise HTTPException(status_code=404, detail="Subtopic not found")
+
+    db.delete(subtopic)
+    db.commit()
+
+    return {"message": "Subtopic deleted"}
 
 
 @router.post("/", response_model=schemas.LearningEntryResponse)
