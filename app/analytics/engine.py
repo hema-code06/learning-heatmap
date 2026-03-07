@@ -76,6 +76,7 @@ def learning_velocity(entries):
 # CONSISTENCY SCORE
 # ------------------------------
 
+
 def consistency_score(entries):
     if len(entries) < 2:
         return 50
@@ -121,13 +122,13 @@ def study_time(entries, mode="daily"):
     for e in entries:
 
         if mode == "daily":
-            key = e.date.strftime("%H")
+            key = e.date.strftime("%Y-%m-%d")
 
         elif mode == "weekly":
             key = e.date.strftime("%A")
 
         elif mode == "monthly":
-            key = e.date.strftime("%d")
+            key = f"Week-{(e.date.day - 1)//7 + 1}"
 
         else:
             key = e.date.strftime("%Y-%m")
