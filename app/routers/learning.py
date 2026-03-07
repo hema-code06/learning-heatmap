@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
+from collections import defaultdict
+from models import LearningEntry, Project
 from uuid import UUID
 
 from app.analytics.engine import (
@@ -209,6 +211,7 @@ def get_dashboard(db: Session = Depends(get_db)):
     entries = db.query(models.LearningEntry).filter(
         models.LearningEntry.user_id == DEMO_USER_ID
     ).order_by(models.LearningEntry.date.asc()).all()
+    total_hours = sum(e.hours for e in entries)
 
     if not entries:
         return {"status": "success", "data": {}}
@@ -279,7 +282,8 @@ def get_dashboard(db: Session = Depends(get_db)):
             "productivity_score": productivity,
             "productivity_label": productivity_label(productivity),
             "insights": insights,
-            "badges": badges
+            "badges": badges,
+            "total_hours": total_hours
         }
     }
 
@@ -310,3 +314,150 @@ def get_badges(db: Session = Depends(get_db)):
     ).all()
 
     return badges
+
+
+@router.get("/analytics/daily-streak")
+def daily_streak(db: Session = Depends(get_db)):
+    logs = db.query(LearningEntry).order_by(LearningEntry.date).all()
+
+    if not logs:
+        return {"current_streak": 0, "longest_streak": 0}
+
+    dates = sorted({log.date for log in logs})
+
+    longest = 1
+    current = 1
+
+    for i in range(1, len(dates)):
+        if dates[i] == dates[i-1] + timedelta(days=1):
+            current += 1
+            longest = max(longest, current)
+        else:
+            current = 1
+
+    return {
+        "current_streak": current,
+        "longest_streak": longest
+    }
+
+
+@router.get("/analytics/velocity")
+def learning_velocity(db: Session = Depends(get_db)):
+    four_weeks_ago = date.today() - timedelta(days=28)
+
+    logs = db.query(LearningEntry).filter(
+        LearningEntry.date >= four_weeks_ago
+    ).all()
+
+    total_hours = sum(log.hours for log in logs)
+    weekly_avg = round(total_hours / 4, 2)
+
+    return {
+        "weekly_average_hours_last_4_weeks": weekly_avg
+    }
+
+
+@router.get("/analytics/consistency")
+def consistency_score(db: Session = Depends(get_db)):
+    last_30 = date.today() - timedelta(days=30)
+
+    logs = db.query(LearningEntry).filter(
+        LearningEntry.date >= last_30
+    ).all()
+
+    active_days = len({log.date for log in logs})
+
+    score = round((active_days / 30) * 100)
+
+    return {
+        "consistency_score_percent": score
+    }
+
+
+@router.get("/analytics/velocity-trend")
+def velocity_trend(db: Session = Depends(get_db)):
+    logs = db.query(LearningEntry).all()
+
+    data = defaultdict(float)
+
+    for log in logs:
+        data[str(log.date)] += log.hours
+
+    trend = [
+        {"date": k, "hours": v}
+        for k, v in sorted(data.items())
+    ]
+
+    return trend
+
+
+@router.get("/analytics/topic-breakdown")
+def topic_breakdown(db: Session = Depends(get_db)):
+    logs = db.query(LearningEntry).all()
+
+    topic_hours = defaultdict(float)
+
+    for log in logs:
+        topic_hours[log.topic] += log.hours
+
+    result = [
+        {"topic": k, "hours": v}
+        for k, v in topic_hours.items()
+    ]
+
+    return result
+
+
+@router.get("/analytics")
+def advanced_analytics(db: Session = Depends(get_db)):
+
+    logs = db.query(LearningEntry).all()
+    projects = db.query(Project).all()
+
+    total_hours = sum(l.hours for l in logs)
+
+    # weekly pattern
+    weekday_hours = defaultdict(float)
+
+    for log in logs:
+        weekday = log.date.strftime("%A")
+        weekday_hours[weekday] += log.hours
+
+    pattern = [
+        {"day": k, "hours": v}
+        for k, v in weekday_hours.items()
+    ]
+    # insights
+    insights = []
+
+    if total_hours > 100:
+        insights.append("🔥 You crossed 100 learning hours!")
+
+    if len(projects) >= 3:
+        insights.append("🏆 Completed 3 projects — badge unlocked!")
+
+    if len(logs) > 50:
+        insights.append("📚 You are building a strong learning habit.")
+
+    # badges
+    badges = []
+
+    if len(projects) >= 3:
+        badges.append({
+            "name": "Project Builder",
+            "description": "Completed 3 projects"
+        })
+    if total_hours >= 200:
+        badges.append({
+            "name": "Deep Learner",
+            "description": "Studied 200+ hours"
+        })
+
+    return {
+        "data": {
+            "total_hours": total_hours,
+            "pattern": pattern,
+            "insights": insights,
+            "badges": badges
+        }
+    }

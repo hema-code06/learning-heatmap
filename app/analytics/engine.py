@@ -11,7 +11,7 @@ def calculate_daily_streak(entries):
     if not entries:
         return 0
 
-    dates = sorted({e.date.date() for e in entries})
+    dates = sorted({e.date() for e in entries})
     today = datetime.utcnow().date()
 
     streak = 0
@@ -28,7 +28,7 @@ def calculate_longest_streak(entries):
     if not entries:
         return 0
 
-    dates = sorted({e.date.date() for e in entries})
+    dates = sorted({e.date() for e in entries})
 
     longest = 0
     current = 1

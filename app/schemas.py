@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import date as DateType
-from typing import Optional, List, Dict
+from typing import Optional
 from uuid import UUID
 
 
@@ -70,73 +70,3 @@ class ProjectCreate(ProjectBase):
 class ProjectResponse(ProjectBase):
     id: UUID
     model_config = ConfigDict(from_attributes=True)
-
-
-class MonthlyGoalCreate(BaseModel):
-    target_hours: float
-
-
-class MonthlyGoalResponse(BaseModel):
-    target: float
-    completed: float
-    percentage: float
-
-
-class TopicBreakdownItem(BaseModel):
-    topic: str
-    hours: float
-    percentage: Optional[float] = None
-
-
-class StudyTimeResponse(BaseModel):
-    mode: str
-    data: Dict[str, float]
-
-
-class PatternResponse(BaseModel):
-    dominant_day: Optional[str] = None
-    learning_type: Optional[str] = None
-    consistency_type: Optional[str] = None
-
-
-class InsightResponse(BaseModel):
-    id: str
-    message: str
-    recommendation: str
-
-
-class BadgeResponse(BaseModel):
-    name: str
-    unlocked_at: Optional[str] = None
-
-
-class LearningOverview(BaseModel):
-    tasks_completed: int
-    points_earned: int
-
-
-class DashboardData(BaseModel):
-    daily_streak: int
-    longest_streak: int
-    velocity: float
-    consistency: float
-
-    overview: LearningOverview
-
-    topic_breakdown: List[TopicBreakdownItem]
-
-    study_time: Dict[str, float]
-
-    pattern: PatternResponse
-
-    productivity_score: float
-    productivity_label: str
-
-    insights: List[InsightResponse]
-
-    badges: List[str]
-
-
-class DashboardResponse(BaseModel):
-    status: str
-    data: DashboardData
