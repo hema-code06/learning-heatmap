@@ -59,12 +59,18 @@ def calculate_longest_streak(entries):
 # ------------------------------
 
 def learning_velocity(entries):
+
     if not entries:
         return 0
 
-    hours = [e.hours for e in entries]
-    return round(mean(hours), 2)
+    day_map = defaultdict(float)
 
+    for e in entries:
+        day_map[e.date] += e.hours
+
+    daily_hours = list(day_map.values())
+
+    return round(mean(daily_hours), 2)
 
 # ------------------------------
 # CONSISTENCY SCORE
