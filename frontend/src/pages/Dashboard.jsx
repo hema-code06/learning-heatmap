@@ -15,7 +15,6 @@ import InsightsPanel from "../components/InsightsPanel";
 import BadgePanel from "../components/BadgePanel";
 
 export default function Dashboard() {
-  const [streak, setStreak] = useState(0);
   const [velocity, setVelocity] = useState(0);
   const [consistency, setConsistency] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -33,7 +32,6 @@ export default function Dashboard() {
     const fetchAnalytics = async () => {
       try {
         const [
-          streakRes,
           velocityRes,
           consistencyRes,
           trendRes,
@@ -41,7 +39,6 @@ export default function Dashboard() {
           advancedRes,
           dailyRes,
         ] = await Promise.all([
-          API.get("/learning/analytics/streak"),
           API.get("/learning/analytics/velocity"),
           API.get("/learning/analytics/consistency"),
           API.get("/learning/analytics/velocity-trend"),
@@ -50,7 +47,6 @@ export default function Dashboard() {
           API.get("/learning/analytics/daily-streak"),
         ]);
 
-        setStreak(streakRes.data.weekly_streak);
         setVelocity(velocityRes.data.weekly_average_hours_last_4_weeks);
         setConsistency(consistencyRes.data.consistency_score_percent);
         setTrendData(trendRes.data);
@@ -127,7 +123,7 @@ export default function Dashboard() {
   );
 }
 
-function MetricCard({ title, value, suffix }) {
+function MetricCard({ title, value }) {
   return (
     <div className="bg-white rounded-3xl p-8 shadow-md border border-slate-200 hover:shadow-lg transition">
       <p className="text-sm text-slate-500">{title}</p>

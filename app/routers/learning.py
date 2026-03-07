@@ -14,20 +14,20 @@ from app.analytics.engine import (
 
 from .. import models, schemas
 from ..database import get_db
-from ..auth import get_current_user
 
 router = APIRouter()
+
+DEMO_USER_ID = 1
 
 
 @router.post("/", response_model=schemas.LearningEntryResponse)
 def create_entry(
     entry: schemas.LearningEntryCreate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     data = entry.model_dump()
 
-    new_entry = models.LearningEntry(user_id=current_user.id, **data)
+    new_entry = models.LearningEntry(user_id=DEMO_USER_ID, **data)
 
     db.add(new_entry)
     db.commit()
@@ -39,14 +39,13 @@ def create_entry(
 def get_entries(
     page: int = 1,
     limit: int = 20,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     offset = (page-1)*limit
 
     entries = (
         db.query(models.LearningEntry)
-        .filter(models.LearningEntry.user_id == current_user.id)
+        .filter(models.LearningEntry.user_id == DEMO_USER_ID)
         .order_by(models.LearningEntry.date.desc())
         .offset(offset)
         .limit(limit)
@@ -59,12 +58,11 @@ def get_entries(
 def update_entry(
     entry_id: UUID,
     updated_data: schemas.LearningEntryUpdate,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     entry = db.query(models.LearningEntry).filter(
         models.LearningEntry.id == entry_id,
-        models.LearningEntry.user_id == current_user.id
+        models.LearningEntry.user_id == DEMO_USER_ID
     ).first()
 
     if not entry:
@@ -83,12 +81,11 @@ def update_entry(
 @router.delete("/{entry_id}")
 def delete_entry(
     entry_id: UUID,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     entry = db.query(models.LearningEntry).filter(
         models.LearningEntry.id == entry_id,
-        models.LearningEntry.user_id == current_user.id
+        models.LearningEntry.user_id == DEMO_USER_ID
     ).first()
 
     if not entry:
@@ -101,11 +98,10 @@ def delete_entry(
 
 @router.get("/analytics/streak")
 def get_weekly_streak(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     entries = db.query(models.LearningEntry.date).filter(
-        models.LearningEntry.user_id == current_user.id
+        models.LearningEntry.user_id == DEMO_USER_ID
     ).distinct().order_by(models.LearningEntry.date.asc()).all()
 
     if not entries:
@@ -126,12 +122,11 @@ def get_weekly_streak(
 
 @router.get("/analytics/velocity")
 def get_learning_velocity(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     four_weeks_ago = datetime.utcnow().date() - timedelta(weeks=4)
     total_hours = db.query(func.sum(models.LearningEntry.hours)).filter(
-        models.LearningEntry.user_id == current_user.id,
+        models.LearningEntry.user_id == DEMO_USER_ID,
         models.LearningEntry.date >= four_weeks_ago
     ).scalar() or 0
 
@@ -142,12 +137,11 @@ def get_learning_velocity(
 
 @router.get("/analytics/consistency")
 def get_consistency_score(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     thirty_days_ago = datetime.utcnow().date() - timedelta(days=30)
     active_days = db.query(func.count(func.distinct(models.LearningEntry.date))).filter(
-        models.LearningEntry.user_id == current_user.id,
+        models.LearningEntry.user_id == DEMO_USER_ID,
         models.LearningEntry.date >= thirty_days_ago
     ).scalar() or 0
 
@@ -158,15 +152,14 @@ def get_consistency_score(
 
 @router.get("/analytics/velocity-trend")
 def get_velocity_trend(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     results = db.query(
         extract("year", models.LearningEntry.date).label("year"),
         extract("week", models.LearningEntry.date).label("week"),
         func.sum(models.LearningEntry.hours).label("total_hours")
     ).filter(
-        models.LearningEntry.user_id == current_user.id
+        models.LearningEntry.user_id == DEMO_USER_ID
     ).group_by(
         "year", "week"
     ).order_by(
@@ -178,14 +171,13 @@ def get_velocity_trend(
 
 @router.get("/analytics/topic-breakdown")
 def get_topic_breakdown(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     results = db.query(
         models.LearningEntry.topic,
         func.sum(models.LearningEntry.hours).label("total_hours")
     ).filter(
-        models.LearningEntry.user_id == current_user.id
+        models.LearningEntry.user_id == DEMO_USER_ID
     ).group_by(
         models.LearningEntry.topic
     ).order_by(
@@ -204,13 +196,12 @@ def get_topic_breakdown(
 @router.post("/goal")
 def set_monthly_goal(
     target_hours: float,
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     current_month = datetime.utcnow().strftime("%Y-%m")
 
     existing = db.query(models.MonthlyGoal).filter(
-        models.MonthlyGoal.user_id == current_user.id,
+        models.MonthlyGoal.user_id == DEMO_USER_ID,
         models.MonthlyGoal.month == current_month,
     ).first()
 
@@ -218,7 +209,7 @@ def set_monthly_goal(
         existing.target_hours = target_hours
     else:
         new_goal = models.MonthlyGoal(
-            user_id=current_user.id,
+            user_id=DEMO_USER_ID,
             month=current_month,
             target_hours=target_hours
         )
@@ -230,13 +221,12 @@ def set_monthly_goal(
 
 @router.get("/goal/progress")
 def get_goal_progress(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     current_month = datetime.utcnow().strftime("%Y-%m")
 
     goal = db.query(models.MonthlyGoal).filter(
-        models.MonthlyGoal.user_id == current_user.id,
+        models.MonthlyGoal.user_id == DEMO_USER_ID,
         models.MonthlyGoal.month == current_month,
     ).first()
 
@@ -248,7 +238,7 @@ def get_goal_progress(
     total_hours = db.query(
         func.sum(models.LearningEntry.hours)
     ).filter(
-        models.LearningEntry.user_id == current_user.id,
+        models.LearningEntry.user_id == DEMO_USER_ID,
         models.LearningEntry.date >= month_start
     ).scalar() or 0
 
@@ -264,11 +254,10 @@ def get_goal_progress(
 
 @router.get("/analytics")
 def get_advanced_analytics(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     entries = db.query(models.LearningEntry).filter(
-        models.LearningEntry.user_id == current_user.id
+        models.LearningEntry.user_id == DEMO_USER_ID
     ).order_by(models.LearningEntry.date.asc()).all()
 
     if not entries:
@@ -305,7 +294,7 @@ def get_advanced_analytics(
     # Goal Completion
     current_month = today.strftime("%Y-%m")
     goal = db.query(models.MonthlyGoal).filter(
-        models.MonthlyGoal.user_id == current_user.id,
+        models.MonthlyGoal.user_id == DEMO_USER_ID,
         models.MonthlyGoal.month == current_month
     ).first()
 
@@ -345,7 +334,7 @@ def get_advanced_analytics(
 
     # Persist Badges
     existing_badges = db.query(models.Badge).filter(
-        models.Badge.user_id == current_user.id
+        models.Badge.user_id == DEMO_USER_ID
     ).all()
 
     existing_names = {b.badge_name for b in existing_badges}
@@ -353,14 +342,14 @@ def get_advanced_analytics(
     for badge_name in calculated_badges:
         if badge_name not in existing_names:
             db.add(models.Badge(
-                user_id=current_user.id,
+                user_id=DEMO_USER_ID.id,
                 badge_name=badge_name
             ))
 
     db.commit()
 
     final_badges = db.query(models.Badge).filter(
-        models.Badge.user_id == current_user.id
+        models.Badge.user_id == DEMO_USER_ID
     ).all()
 
     return {
@@ -377,11 +366,10 @@ def get_advanced_analytics(
 
 @router.get("/analytics/daily-streak")
 def get_daily_streak(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     dates = db.query(models.LearningEntry.date).filter(
-        models.LearningEntry.user_id == current_user.id
+        models.LearningEntry.user_id == DEMO_USER_ID
     ).distinct().order_by(models.LearningEntry.date.asc()).all()
 
     if not dates:
@@ -421,11 +409,10 @@ def get_daily_streak(
 
 @router.get("/badges")
 def get_user_badges(
-    db: Session = Depends(get_db),
-    current_user: models.User = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     badges = db.query(models.Badge).filter(
-        models.Badge.user_id == current_user.id
+        models.Badge.user_id == DEMO_USER_ID
     ).order_by(models.Badge.unlocked_at.desc()).all()
 
     return [
