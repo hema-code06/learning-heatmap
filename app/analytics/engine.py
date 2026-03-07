@@ -147,7 +147,7 @@ def study_time(entries, mode="daily"):
 # ------------------------------
 
 def analyze_weekly_pattern(entries):
-    day_map = defaultdict(int)
+    day_map = defaultdict(float)
 
     for entry in entries:
         day = entry.date.strftime("%A")
