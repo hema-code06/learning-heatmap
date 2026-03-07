@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from .routers import auth, learning
+from .routers import learning
 from .database import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -22,7 +22,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(learning.router, prefix="/learning", tags=["Learning"])
 
 
