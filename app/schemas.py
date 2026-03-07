@@ -1,25 +1,13 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel
 from datetime import date as DateType
 from typing import Optional
 from uuid import UUID
-
-
-class UserCreate(BaseModel):
-    name: str = Field(..., min_length=2, max_length=100)
-    email: EmailStr
-    password: str = Field(..., min_length=8, max_length=72)
-
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
 
 
 class LearningEntryBase(BaseModel):
     date: DateType
     hours: float
     topic: str
-
 
 
 class LearningEntryCreate(LearningEntryBase):
@@ -37,5 +25,3 @@ class LearningEntryResponse(LearningEntryBase):
 
     class Config:
         from_attributes = True
-
-

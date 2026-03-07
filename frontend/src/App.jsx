@@ -1,9 +1,6 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Register from "./pages/Register";
-import Login from "./pages/Login";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import { Toaster } from "react-hot-toast";
-import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -19,16 +16,8 @@ function App() {
         }}
       />
       <Routes>
-        <Route path="register" element={<Register />} />
-        <Route path="/" element={<Login />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
