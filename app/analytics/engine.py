@@ -39,7 +39,7 @@ def calculate_longest_streak(entries):
     if not entries:
         return 0
 
-    dates = sorted({e.date() for e in entries})
+    dates = sorted({e.date for e in entries})
 
     longest = 0
     current = 1

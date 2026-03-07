@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta, date
 from collections import defaultdict
-from models import LearningEntry, Project
+from app.models import LearningEntry, Project
 from uuid import UUID
 
 from app.analytics.engine import (
@@ -231,6 +231,8 @@ def get_dashboard(db: Session = Depends(get_db)):
 
     # study time
     study = study_time(entries, "daily")
+    study_week = study_time(entries, "weekly")
+    study_month = study_time(entries, "monthly")
 
     # overview
     overview = learning_overview(entries)
@@ -277,7 +279,11 @@ def get_dashboard(db: Session = Depends(get_db)):
             "consistency": consistency,
             "overview": overview,
             "topic_breakdown": topics,
-            "study_time": study,
+            "study_time": {
+                "daily": study,
+                "weekly": study_week,
+                "monthly": study_month
+            },
             "pattern": pattern,
             "productivity_score": productivity,
             "productivity_label": productivity_label(productivity),
@@ -461,3 +467,29 @@ def advanced_analytics(db: Session = Depends(get_db)):
             "badges": badges
         }
     }
+
+def skill_development(entries):
+
+    skills = defaultdict(float)
+
+    for e in entries:
+        skills[e.topic] += e.hours
+
+    return [
+        {"skill": k, "score": round(v,2)}
+        for k,v in skills.items()
+    ]
+    
+def yearly_average(entries):
+
+    if not entries:
+        return 0
+
+    year_map = defaultdict(float)
+
+    for e in entries:
+        year_map[e.date.year] += e.hours
+
+    avg = sum(year_map.values()) / len(year_map)
+
+    return round(avg,2)
