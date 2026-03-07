@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from datetime import date as DateType
 from typing import Optional
 from uuid import UUID
@@ -23,5 +23,4 @@ class LearningEntryUpdate(BaseModel):
 class LearningEntryResponse(LearningEntryBase):
     id: UUID
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
