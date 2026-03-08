@@ -8,7 +8,7 @@ import {
   CartesianGrid,
 } from "recharts";
 
-export default function TopicChart({ data }) {
+export default function TopicChart({ data = [] }) {
   return (
     <div className="w-full h-72">
       <ResponsiveContainer width="100%" height="100%">
@@ -25,16 +25,9 @@ export default function TopicChart({ data }) {
 
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
-          <XAxis
-            dataKey="topic"
-            tick={{ fontSize: 12 }}
-            stroke="#94A3B8"
-          />
+          <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#94A3B8" />
 
-          <YAxis
-            tick={{ fontSize: 12 }}
-            stroke="#94A3B8"
-          />
+          <YAxis tick={{ fontSize: 12 }} stroke="#94A3B8" />
 
           <Tooltip
             cursor={{ fill: "rgba(99,102,241,0.1)" }}

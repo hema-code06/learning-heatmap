@@ -25,3 +25,5 @@ export const getDashboard = () => API.get("/analytics/dashboard");
 export const getStudyTime = (mode = "daily") =>
   API.get(`/analytics/study-time?mode=${mode}`);
 export const getBadges = () => API.get("/badges");
+
+export default API;

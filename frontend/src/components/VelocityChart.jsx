@@ -9,11 +9,21 @@ import {
 } from "recharts";
 
 export default function VelocityChart({ data }) {
+  
+  // Convert backend object → array for recharts
+  const chartData = Object.entries(data || {}).map(([date, hours]) => ({
+    date: new Date(date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }),
+    hours,
+  }));
+
   return (
     <div className="w-full h-72">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart
-          data={data}
+          data={chartData}
           margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
         >
           <defs>
@@ -25,11 +35,19 @@ export default function VelocityChart({ data }) {
 
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
-          <XAxis dataKey="week" tick={{ fontSize: 12 }} stroke="#94A3B8" />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 12 }}
+            stroke="#94A3B8"
+          />
 
-          <YAxis tick={{ fontSize: 12 }} stroke="#94A3B8" />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            stroke="#94A3B8"
+          />
 
           <Tooltip
+            formatter={(value) => [`${value} hrs`, "Study Time"]}
             contentStyle={{
               borderRadius: "10px",
               border: "none",

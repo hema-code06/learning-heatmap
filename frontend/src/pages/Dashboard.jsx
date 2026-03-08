@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import API from "../api";
+import { getDashboard, getStudyTime } from "../api";
 import DashboardLayout from "../layout/DashboardLayout";
 import Card from "../components/ui/Card";
 import VelocityChart from "../components/VelocityChart";
@@ -29,28 +29,25 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const [
-          velocityRes,
-          consistencyRes,
-          trendRes,
-          topicRes,
-          advancedRes,
-          dailyRes,
-        ] = await Promise.all([
-          API.get("/learning/analytics/velocity"),
-          API.get("/learning/analytics/consistency"),
-          API.get("/learning/analytics/velocity-trend"),
-          API.get("/learning/analytics/topic-breakdown"),
-          API.get("/learning/analytics"),
-          API.get("/learning/analytics/daily-streak"),
-        ]);
+        const dashboardRes = await getDashboard();
 
-        setVelocity(velocityRes.data.weekly_average_hours_last_4_weeks);
-        setConsistency(consistencyRes.data.consistency_score_percent);
-        setTrendData(trendRes.data);
-        setTopicData(topicRes.data);
-        setAdvanced(advancedRes.data.data);
-        setDailyStreak(dailyRes.data);
+        const data = dashboardRes.data.data;
+
+        setVelocity(data.velocity);
+        setConsistency(data.consistency);
+        setTrendData(data.study_time.daily || []);
+        setTopicData(data.topic_breakdown || []);
+        setAdvanced({
+          pattern: data.pattern,
+          insights: data.insights,
+          badges: data.badges,
+          total_hours: data.total_hours,
+        });
+
+        setDailyStreak({
+          current_streak: data.daily_streak,
+          longest_streak: data.longest_streak,
+        });
       } catch (err) {
         console.error("Analytics error:", err);
       }
