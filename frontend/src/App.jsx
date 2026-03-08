@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
+import DashboardLayout from "./layout/DashboardLayout";
 import { Toaster } from "react-hot-toast";
 
 function App() {
@@ -16,7 +17,10 @@ function App() {
         }}
       />
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route element={<DashboardLayout />}>
+          <Route path="/" element={<Dashboard />} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
