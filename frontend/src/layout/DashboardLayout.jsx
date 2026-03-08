@@ -12,7 +12,7 @@ export default function DashboardLayout({ children }) {
   const fetchEntries = async () => {
     try {
       setLoadingEntries(true);
-      const res = await API.get("/learning/");
+      const res = await API.get("/");
       setEntries(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error("Fetch entries error:", err);
@@ -36,8 +36,8 @@ export default function DashboardLayout({ children }) {
       {/* Sidebar */}
       <aside className="w-72 bg-white border-r border-slate-200 shadow-sm p-6 flex flex-col">
         <div className="flex items-center gap-2 mb-8">
-          <LayoutDashboard className="text-indigo-600" />
-          <h2 className="text-2xl font-bold text-indigo-600">LearnTrack</h2>
+          <LayoutDashboard className="text-blue-600" />
+          <h2 className="text-2xl font-bold text-blue-600">LearnTrack</h2>
         </div>
 
         <button
@@ -45,7 +45,7 @@ export default function DashboardLayout({ children }) {
             setEditingEntry(null);
             setShowModal(true);
           }}
-          className="mb-6 flex items-center justify-center gap-2 bg-indigo-600 text-white py-2 rounded-xl hover:bg-indigo-700 transition"
+          className="mb-6 flex items-center justify-center gap-2 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 transition"
         >
           <Plus size={16} />
           Add Entry
@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }) {
                   </div>
 
                   <div className="text-xs text-slate-400 mt-1">
-                    {new Date(entry.date).toLocaleDateString()}
+                    {new Date(entry.created_at).toLocaleDateString()}
                   </div>
                 </li>
               ))}
